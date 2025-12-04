@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}리뷰 작성: {{ task.title }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">⭐️ 심부름 리뷰 작성</h1>
+            <p class="lead">
+                <strong>{{ task.title }}</strong> 심부름에 대한 평가입니다.
+                <br>도우미 <strong>{{ reviewed_user.username }}</strong>님에게 별점과 코멘트를 남겨주세요.
+            </p>
+            <hr>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    {{ form.rating.label_tag }}
+                    <p class="text-muted small">1점(매우 불만족) 부터 5점(매우 만족)까지 선택해주세요.</p>
+                    {{ form.rating }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.comment.label_tag }}
+                    {{ form.comment }}
+                    {% if form.comment.errors %}
+                        <div class="alert alert-danger mt-1">{{ form.comment.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg mt-3">리뷰 제출 및 완료</button>
+                <a href="{% url 'task_detail' pk=task.pk %}" class="btn btn-secondary btn-lg mt-3">취소</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

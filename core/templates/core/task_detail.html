@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <span class="badge bg-secondary me-2">{{ task.get_status_display }}</span>
+                    <span class="badge bg-warning text-dark">💰 {{ task.reward_points }} P</span>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title">{{ task.title }}</h1>
+                    <p class="text-muted">등록자: {{ task.registrant.username }} | 등록일: {{ task.created_at|date:"Y.m.d H:i" }}</p>
+                    <hr>
+                    <p class="card-text">{{ task.content|linebreaksbr }}</p>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">📍 **장소:** {{ task.location }}</li>
+                    <li class="list-group-item">⏳ **마감 기한:** <strong class="text-danger">{{ task.due_date|date:"Y년 m월 d일 H시 i분" }}</strong></li>
+                    {% if task.assigned_to %}
+                        <li class="list-group-item bg-light">✅ **할당된 도우미:** <strong>{{ task.assigned_to.username }}</strong></li>
+                    {% endif %}
+                </ul>
+                
+                {% if task.status == 'completed' and task.review %}
+                <div class="card-footer bg-success text-white">
+                    <p class="mb-1">⭐️ **작성된 리뷰:** {{ task.review.rating }}점 / 5점</p>
+                    <p class="mb-0 small">"{{ task.review.comment|default:"리뷰 내용 없음"|truncatechars:50 }}"</p>
+                </div>
+                {% endif %}
+                </div>
+
+            <div class="text-center mb-5 p-4 border rounded">
+                {% if user.is_authenticated %}
+                    
+                    {% if is_registrant %}
+                        <p class="lead text-primary">📢 **이 심부름은 회원님께서 등록하신 공고입니다.**</p>
+                        
+                        {% if task.status == 'assigned' %}
+                            <form method="post" action="{% url 'task_complete' pk=task.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-lg">✅ 심부름 완료 처리 및 포인트 지급</button>
+                            </form>
+                        
+                        {% elif task.status == 'completed' %}
+                            <p class="text-success lead">이 심부름은 **완료 처리**되었습니다. 감사합니다!</p>
+                            
+                            {% if review_possible %}
+                                <a href="{% url 'task_review' pk=task.pk %}" class="btn btn-danger btn-lg mt-3">⭐️ **도우미 평가 (리뷰) 작성하기**</a>
+                            {% endif %}
+                            {% elif task.status == 'open' %}
+                            <p>아래 지원자 목록에서 도우미를 선택하여 할당할 수 있습니다. (현재 MVP에서는 수동으로 관리자 페이지에서 할당 가능)</p>
+                        {% endif %}
+
+                    {% elif task.status == 'open' %}
+                        {% if has_applied %}
+                            <button class="btn btn-warning btn-lg" disabled>이미 지원 완료 (대기 중)</button>
+                        {% else %}
+                            <a href="{% url 'task_apply' pk=task.pk %}" class="btn btn-success btn-lg">✨ 심부름 지원하기 ({{ task.reward_points }} P 보상)</a>
+                        {% endif %}
+                        
+                    {% elif task.status != 'open' %}
+                        <button class="btn btn-danger btn-lg" disabled>🚫 현재 지원 불가능 상태입니다.</button>
+                    {% endif %}
+                    
+                {% else %}
+                    <p class="lead">심부름에 지원하려면 <a href="{% url 'login' %}">로그인</a>이 필요합니다.</p>
+                {% endif %}
+            </div>
+            
+        </div>
+        
+        <div class="col-lg-4">
+            {% if is_registrant %}
+            <div class="card bg-light shadow-sm">
+                <div class="card-header h4">🧑‍💻 지원자 목록 ({{ applications.count }}명)</div>
+                <ul class="list-group list-group-flush">
+                    {% for app in applications %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ app.applicant.username }}
+                            {% if app.status == 'pending' %}
+                                <span class="badge bg-primary">대기 중</span>
+                            {% elif app.status == 'accepted' %}
+                                <span class="badge bg-success">수락됨</span>
+                            {% endif %}
+                            </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted">아직 지원자가 없습니다.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

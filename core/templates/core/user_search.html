@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}사용자 검색{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1 class="mb-4">🔍 리뷰 대상 사용자 검색</h1>
+        <p class="lead text-muted">
+            특정 사용자에게 심부름과 관계없이 리뷰와 별점을 남기고 싶다면, 여기서 사용자 이름을 검색하세요.
+        </p>
+        <hr>
+        
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-sm-9">
+                        {{ form.search_query }}
+                    </div>
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-primary w-100">검색</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if search_query %}
+            <h2 class="mt-4">
+                '{{ search_query }}' 검색 결과 
+                {% if users.count > 0 %}
+                    ({{ users.count }}명)
+                {% endif %}
+            </h2>
+            
+            {% if users %}
+                <div class="list-group">
+                    {% for target_user in users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2">
+                            <div>
+                                <h4>👤 {{ target_user.username }}</h4>
+                                <p class="mb-1 text-muted">
+                                    평균 별점: 
+                                    {% if target_user.userprofile.average_rating > 0.0 %}
+                                        <span class="text-warning fw-bold">⭐ {{ target_user.userprofile.average_rating }} / 5.0</span>
+                                    {% else %}
+                                        (리뷰 없음)
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <a href="{% url 'user_review' username=target_user.username %}" class="btn btn-success btn-sm">
+                                ⭐️ 리뷰 남기기
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    검색 결과와 일치하는 사용자가 없습니다.
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info text-center">
+                검색창에 리뷰 대상자의 사용자 이름을 입력하여 검색을 시작해 주세요.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

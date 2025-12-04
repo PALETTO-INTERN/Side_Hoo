@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}심부름 목록{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🏃‍♂️ 심부름 공고 목록 (모집 중)</h1>
+        {% if user.is_authenticated %}
+            <a href="{% url 'task_create' %}" class="btn btn-primary btn-lg">⭐ 새 심부름 등록</a>
+        {% endif %}
+    </div>
+    <hr>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">🔍 도우미 별점 필터 (공고 등록자 기준)</h5>
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="min_rating" class="col-form-label">최소 별점:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="min_rating" id="min_rating" class="form-select">
+                        <option value="">(전체)</option>
+                        {% for value, label in rating_choices %}
+                            <option value="{{ value }}" {% if current_min_rating|stringformat:"i" == value|stringformat:"i" %}selected{% endif %}>
+                                {{ label }} 이상
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-info">필터 적용</button>
+                    {% if current_min_rating %}
+                        <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">초기화</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    {% if tasks %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for task in tasks %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary"><a href="{% url 'task_detail' pk=task.pk %}" class="text-decoration-none">{{ task.title }}</a></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">등록자: **{{ task.registrant.username }}**</h6>
+                        <p class="card-text text-truncate">{{ task.content }}</p>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            💰 **보상:** <span class="badge bg-success">{{ task.reward_points }} P</span> | 📍 **장소:** {{ task.location }}
+                        </li>
+                        <li class="list-group-item">
+                            ⏳ **마감 기한:** {{ task.due_date|date:"Y년 m월 d일 H시 i분" }}
+                        </li>
+                    </ul>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'task_detail' pk=task.pk %}" class="btn btn-sm btn-outline-primary">상세 보기 및 지원</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center mt-4">
+            현재 모집 중인 심부름 공고가 없습니다. 새로운 심부름을 등록해보세요!
+        </div>
+    {% endif %}
+    
+{% endblock %}

@@ -1,0 +1,81 @@
+# core/views.py (추가해야 할 두 함수)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db.models import Avg, Q
+from django.contrib.auth.models import User
+from .forms import ReviewForm, UserSearchForm # ReviewForm과 UserSearchForm 임포트 확인
+from .models import UserReview 
+
+
+# 9. 사용자 검색 (user_search)
+def user_search(request):
+    """
+    사용자 이름을 검색하고 결과를 보여주는 view입니다.
+    리뷰 작성 대상자를 찾기 위해 사용됩니다.
+    """
+    # GET 요청을 처리하기 위해 UserSearchForm 사용
+    form = UserSearchForm(request.GET)
+    users = User.objects.none()
+    search_query = None
+
+    if form.is_valid():
+        search_query = form.cleaned_data['search_query']
+        
+        # 현재 로그인된 사용자 제외 및 검색어 필터링
+        # iendswith: 대소문자 구분 없이 끝 부분이 일치하는지 검색
+        users = User.objects.filter(
+            Q(username__icontains=search_query)  # username에 검색어가 포함된 경우
+        ).exclude(
+            # 로그인한 사용자는 자기 자신에게 리뷰를 작성할 수 없도록 제외
+            id=request.user.id if request.user.is_authenticated else None
+        ).select_related(
+            # N+1 쿼리 문제를 방지하기 위해 UserProfile을 미리 로드
+            'userprofile'
+        ).order_by(
+            # 검색 결과의 일관성을 위해 정렬
+            'username'
+        )
+
+    return render(request, 'core/user_search.html', {
+        'form': form,
+        'users': users,
+        'search_query': search_query,
+    })
+
+
+# 10. 특정 사용자에게 일반 리뷰 작성 (user_review)
+def user_review(request, username):
+    """
+    특정 사용자(username)에 대한 리뷰를 작성하는 view입니다.
+    """
+    # 리뷰 대상 사용자 객체 가져오기 (없으면 404 에러 발생)
+    target_user = get_object_or_404(User, username=username)
+
+    # 자기 자신에게 리뷰 작성 금지
+    if request.user.is_authenticated and request.user == target_user:
+        messages.error(request, "자신에게는 리뷰를 작성할 수 없습니다.")
+        return redirect('user_search') # 검색 페이지로 돌려보냄
+
+    if request.method == 'POST':
+        # 심부름 리뷰와 동일한 ReviewForm 사용
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            # DB에 저장
+            review = form.save(commit=False)
+            review.reviewer = request.user # 리뷰 작성자는 현재 로그인된 사용자
+            review.reviewed_user = target_user # 리뷰 대상 사용자
+            # is_task_review는 기본값 False로 저장됨 (models.py의 UserReview 참고)
+            review.save()
+
+            messages.success(request, f"{target_user.username}님에게 리뷰를 성공적으로 남겼습니다. 감사합니다!")
+            return redirect('user_search') # 리뷰 작성 후 검색 페이지로 리다이렉트 (또는 프로필 페이지로)
+    else:
+        form = ReviewForm()
+
+    return render(request, 'core/user_review_form.html', {
+        'form': form,
+        'target_user': target_user
+    })
+
+# 이 외의 기존 view 함수들 (task_list, profile, signup, task_create, task_detail 등)은 그대로 유지되어야 합니다.

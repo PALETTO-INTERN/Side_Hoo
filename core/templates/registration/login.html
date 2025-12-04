@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}로그인{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="text-center">로그인</h1>
+            <hr>
+            <form method="post" class="card p-4">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success mt-3">로그인</button>
+            </form>
+            <p class="text-center mt-3">
+                아직 계정이 없으신가요? <a href="{% url 'signup' %}">회원가입</a>
+            </p>
+        </div>
+    </div>
+{% endblock %}

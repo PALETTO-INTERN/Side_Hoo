@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ username }}님의 프로필{% endblock %}
+
+{% block content %}
+    
+    <h1>
+        👤 {{ username }}님 
+        <span class="badge bg-danger align-middle fs-5">{{ title_badge }}</span>
+    </h1>
+    <hr>
+    
+    <div class="card mb-3">
+        <div class="card-header bg-success text-white">💰 내 재화 정보</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <strong>보유 포인트:</strong> <span class="badge bg-primary fs-5">{{ points }} P</span>
+            </li>
+            <li class="list-group-item">
+                <strong>완료한 심부름 수:</strong> <span class="badge bg-secondary fs-5">{{ tasks_completed }} 건</span>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card mb-3">
+        <div class="card-header bg-warning text-dark">✨ 활동 통계</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <strong>평균 별점:</strong> 
+                <span class="badge bg-dark fs-5">
+                    {% if average_rating > 0.0 %}
+                        {{ average_rating }} / 5.0
+                    {% else %}
+                        (아직 리뷰가 없습니다)
+                    {% endif %}
+                </span>
+            </li>
+        </ul>
+    </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white h4">👑 칭호 선택</div>
+        <div class="card-body">
+            <p>현재까지 완료한 심부름 수({{ tasks_completed }}건)에 따라 획득 가능한 칭호를 선택할 수 있습니다.</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row align-items-end">
+                    <div class="col-9">
+                        {{ title_form.selected_title.label_tag }}
+                        {{ title_form.selected_title }}
+                    </div>
+                    <div class="col-3">
+                        <button type="submit" class="btn btn-warning w-100">칭호 변경</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <h2 class="mt-5">📝 받은 리뷰 목록</h2>
+    {% if received_reviews %}
+        <div class="list-group">
+            {% for review in received_reviews %}
+                <div class="list-group-item list-group-item-action flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1 text-warning">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}⭐{% else %}☆{% endif %}
+                            {% endfor %}
+                        </h5>
+                        <small class="text-muted">{{ review.created_at|date:"Y-m-d" }}</small>
+                    </div>
+                    <p class="mb-1">{{ review.comment }}</p>
+                    <small>작성자: {{ review.reviewer.username }}</small>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">아직 받은 리뷰가 없습니다.</p>
+    {% endif %}
+    <h2 class="mt-5">나의 활동 이력 (TODO)</h2>
+    <p>여기에 내가 등록하거나 지원한 심부름 목록이 표시될 예정입니다.</p>
+
+{% endblock %}
